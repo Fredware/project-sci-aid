@@ -48,6 +48,8 @@ void setup() {
   /*I2C SETUP*/
   Wire.begin();
   Serial.begin(BAUD_RATE);
+  /*I2C Debugging*/
+
   /***Initialize Address Pointer to Angle Register*/
   Wire.beginTransmission(ENCODER_ADDRESS);
   Wire.write(ANGLE_REGISTER_ADDRESS);
