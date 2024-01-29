@@ -26,7 +26,7 @@ float cumulative_err = 0;
 float p_term = 0;
 float i_term = 0;
 
-/*Biquad filter vars*/
+/*Biquad filter vars: Fs=532Hz, Fc=2Hz*/
 float a[] = {
 0.0001371901572386312,
 0.0002743803144772624,
