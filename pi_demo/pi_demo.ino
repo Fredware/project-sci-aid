@@ -5,7 +5,7 @@
 #define ANGLE_REGISTER_ADDRESS 0x0E
 #define SIZE_OF_ANGLE 2 /*Bytes*/
 
-#define PWM_OUT_PIN 11
+#define PWM_OUT_PIN 10
 #define PWM_MAX 255 /*255*/
 #define PWM_MIN 0   /*We don't want full range for some reason*/
 #define PWM_DIR_PIN 12
@@ -16,7 +16,7 @@
 
 /*User-defined constants*/
 const uint16_t ANGLE_REF = 2475; /*Vertical position*/
-const float K_P = 0.3;
+const float K_P = 0.005;//0.3
 const float K_I = 0;
 
 /*PID vars*/
@@ -26,16 +26,16 @@ float error_agg = 0;
 float p_term = 0;
 float i_term = 0;
 
-/*Biquad filter vars: Fs=532Hz, Fc=2Hz*/
+/*Biquad filter vars: Fs=532Hz, Fc=2Hz->20Hz*/
 float a[] = {
-0.0001371901572386312,
-0.0002743803144772624,
-0.0001371901572386312
+0.011912749651430805,
+0.02382549930286161,
+0.011912749651430805
 };
 float b[] = {
 1.0,
--1.9665975850995905,
-0.9671463457285449
+-1.6683825426944794,
+0.7160335413002028
 };
 float yn;
 float wn;
@@ -80,8 +80,11 @@ void setup() {
   /*Loop rate*/
   pinMode(LOOP_RATE_PIN, OUTPUT);
   /*PWM SETUP*/
-  pinMode(PWM_OUT_PIN, OUTPUT);
   pinMode(PWM_DIR_PIN, OUTPUT);
+  pinMode(PWM_OUT_PIN, OUTPUT);
+  /***Non-prescaled PWM: =~ 31.3kHz*/
+  TCCR2A = _BV(COM2A1) | _BV(COM2A0) | _BV(COM2B1)  | _BV(COM2B0) | _BV(WGM20);
+  TCCR2B = _BV(CS20);
   /*I2C SETUP*/
   Wire.begin();
   Serial.begin(BAUD_RATE);
