@@ -21,8 +21,8 @@ const float K_I = 0;
 
 /*PID vars*/
 int prev_err = 0;
-int prev_time = 0;
-float cumulative_err = 0;
+int time_prev = 0;
+float error_agg = 0;
 float p_term = 0;
 float i_term = 0;
 
@@ -94,20 +94,20 @@ void setup() {
 void loop() {
   digitalWrite(LOOP_RATE_PIN, HIGH);
   /*Time calculations*/
-  unsigned long current_time = micros();
-  float delta_sec = ((float)(current_time - prev_time)) / 1.0e6;
-  prev_time = current_time;
-
-  /*Error calculation*/
-  uint16_t angle_des = get_setpoint(); /*Replace with Abby's API*/
+  unsigned long time_obs = micros();
   uint16_t angle_obs = request_angle_i2c();
-  int angle_err = angle_des - angle_obs;
-  cumulative_err = cumulative_err + (angle_err * delta_sec);
+  uint16_t angle_des = get_setpoint(); /*Replace with Abby's API*/
+
+  /*Error calculation*/ 
+  int error_obs = angle_des - angle_obs;
+  float delta_sec = ((float)(time_obs - time_prev)) / 1.0e6;
+  error_agg = error_agg + (error_obs * delta_sec);
 
   /*PID update*/
-  p_term = K_P * angle_err;
-  i_term = K_I * cumulative_err;
+  p_term = K_P * error_obs;
+  i_term = K_I * error_agg;
   float ctrl_signal = p_term + i_term;
+  time_prev = time_obs;
 
   float filt_signal = filter_signal(ctrl_signal);
 
