@@ -15,8 +15,8 @@
 #define LOOP_RATE_PIN 3
 
 /*User-defined constants*/
-const uint16_t ANGLE_REF = 2475; /*Vertical position*/
-const float K_P = 0.005;//0.3
+const uint16_t ANGLE_REF = 2468; /*Vertical position*/
+const float K_P = 0.00005;//0.3
 const float K_I = 0;
 
 /*PID vars*/
@@ -28,14 +28,14 @@ float i_term = 0;
 
 /*Biquad filter vars: Fs=532Hz, Fc=2Hz->20Hz*/
 float a[] = {
-0.011912749651430805,
-0.02382549930286161,
-0.011912749651430805
+0.0016556084568007713,
+0.0033112169136015426,
+0.0016556084568007713
 };
 float b[] = {
 1.0,
--1.6683825426944794,
-0.7160335413002028
+-1.8816490381025,
+0.8882714719297028
 };
 float yn;
 float wn;
@@ -99,10 +99,11 @@ void loop() {
   /*Time calculations*/
   unsigned long time_obs = micros();
   uint16_t angle_obs = request_angle_i2c();
+  float angle_obs_flt = filter_signal(angle_obs);
   uint16_t angle_des = get_setpoint(); /*Replace with Abby's API*/
 
   /*Error calculation*/ 
-  int error_obs = angle_des - angle_obs;
+  float error_obs = angle_des - angle_obs_flt;
   float delta_sec = ((float)(time_obs - time_prev)) / 1.0e6;
   error_agg = error_agg + (error_obs * delta_sec);
 
@@ -112,12 +113,12 @@ void loop() {
   float ctrl_signal = p_term + i_term;
   time_prev = time_obs;
 
-  float filt_signal = filter_signal(ctrl_signal);
+  // float filt_signal = filter_signal(ctrl_signal);
 
   /*Map control signal to PWM*/
-  char pwm_dir = filt_signal > 0; /*pos -> cw; neg -> ccw*/
-  float pwm_out = PWM_MAX - fabs(filt_signal);
-  if (pwm_out > PWM_MAX) {
+  char pwm_dir = ctrl_signal > 0; /*pos -> cw; neg -> ccw*/
+  float pwm_out = PWM_MAX - fabs(ctrl_signal);
+  if (pwm_out > (PWM_MAX-0.005)) {
     pwm_out = PWM_MAX;
   } else if (pwm_out < PWM_MIN) {
     pwm_out = PWM_MIN;
@@ -129,15 +130,16 @@ void loop() {
 
   /*Display Trajectory*/
   if (DISPLAY_CTRL) {
-    // Serial.print(angle_des);
-    // Serial.print(" ");
-    // Serial.print(angle_obs);
-    // Serial.print(" ");
-    Serial.print(ctrl_signal);
+    Serial.print(angle_des);
     Serial.print(" ");
-    Serial.print(filt_signal);
+    Serial.print(angle_obs);
+    // Serial.print(" ");
+    // Serial.print(angle_obs_flt);
+    // Serial.print(ctrl_signal);
+    // Serial.print(" ");
+    // Serial.print(filt_signal);
     Serial.println();
   }
   digitalWrite(LOOP_RATE_PIN, LOW);
-  delay(1);
+  delayMicroseconds(100);
 }
