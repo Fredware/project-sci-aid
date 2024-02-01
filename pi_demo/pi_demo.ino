@@ -10,9 +10,10 @@
 #define PWM_MAX 255 /*No speed*/
 #define PWM_MIN 0   /*Max speed*/
 #define PWM_DIR_PIN 12
+#define PWM_DBAND 5e-4
 
-#define DISPLAY_CTRL true
-#define DISPLAY_I2C false
+#define DISPLAY_CTRL false
+#define DISPLAY_I2C true
 #define LOOP_RATE_PIN 3
 
 /*User-defined constants*/
@@ -59,7 +60,15 @@ uint16_t request_angle_i2c()
   Wire.requestFrom(ENCODER_ADDRESS, SIZE_OF_ANGLE);
   byte angle_1 = Wire.read();
   byte angle_0 = Wire.read();
-  uint16_t angle_obs = ((uint16_t)angle_1) << 8;
+  byte temp = 0;
+  if (angle_1 & 0b11110000){
+    temp = angle_1;
+    angle_1 = angle_0;
+    angle_0 = temp; 
+  } 
+
+  uint16_t angle_obs = 0;
+  angle_obs = ((uint16_t)angle_1) << 8;
   angle_obs += angle_0;
 
   if (DISPLAY_I2C)
@@ -102,7 +111,8 @@ void loop()
   /*Time calculations*/
   unsigned long time_obs = micros();
   uint16_t angle_obs = request_angle_i2c();
-  float angle_obs_flt = filter_signal(angle_obs);
+  // float angle_obs_flt = filter_signal(angle_obs);
+  float angle_obs_flt = angle_obs;
   uint16_t angle_des = get_setpoint(); /*TODO: Replace with Abby's API*/
 
   controller_update(&pi_config, &pi_state, angle_des, angle_obs_flt, time_obs);
@@ -110,7 +120,7 @@ void loop()
   /*Map control signal to PWM*/
   char pwm_dir = pi_state.ctrl_out > 0; /*pos -> cw; neg -> ccw*/
   float pwm_out = PWM_MAX - fabs(pi_state.ctrl_out);
-  if (pwm_out > (PWM_MAX - 0.005)){ pwm_out = PWM_MAX;}
+  if (pwm_out > (PWM_MAX - PWM_DBAND)){ pwm_out = PWM_MAX;}
   else if (pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
 
   /*Execute PWM command*/
@@ -120,13 +130,13 @@ void loop()
   /*Display Trajectory*/
   if (DISPLAY_CTRL)
   {
-    // Serial.print(angle_des);
-    // Serial.print(" ");
-    // Serial.print(angle_obs);
+    Serial.print(angle_des);
+    Serial.print(" ");
+    Serial.print(angle_obs);
     // Serial.print(" ");
     // Serial.print(angle_obs_flt);
     // Serial.print(" ");
-    Serial.print(pi_state.ctrl_out);
+    // Serial.print(pi_state.ctrl_out);
     // Serial.print(filt_signal);
     Serial.println();
   }
