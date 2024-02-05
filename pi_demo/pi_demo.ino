@@ -12,8 +12,8 @@
 #define PWM_DIR_PIN 12
 #define PWM_DBAND 5e-4
 
-#define DISPLAY_CTRL false
-#define DISPLAY_I2C true
+#define DISPLAY_CTRL true
+#define DISPLAY_I2C false
 #define LOOP_RATE_PIN 3
 
 /*User-defined constants*/
@@ -115,11 +115,12 @@ void loop()
   float angle_obs_flt = angle_obs;
   uint16_t angle_des = get_setpoint(); /*TODO: Replace with Abby's API*/
 
-  controller_update(&pi_config, &pi_state, angle_des, angle_obs_flt, time_obs);
+  controller_update(&pi_config, &pi_state, angle_des, angle_obs_flt);
 
   /*Map control signal to PWM*/
   char pwm_dir = pi_state.ctrl_out > 0; /*pos -> cw; neg -> ccw*/
   float pwm_out = PWM_MAX - fabs(pi_state.ctrl_out);
+  /*Output Clamping*/
   if (pwm_out > (PWM_MAX - PWM_DBAND)){ pwm_out = PWM_MAX;}
   else if (pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
 
@@ -130,13 +131,19 @@ void loop()
   /*Display Trajectory*/
   if (DISPLAY_CTRL)
   {
-    Serial.print(angle_des);
-    Serial.print(" ");
-    Serial.print(angle_obs);
+    // Serial.print(angle_des);
+    // Serial.print(" ");
+    // Serial.print(angle_obs);
     // Serial.print(" ");
     // Serial.print(angle_obs_flt);
     // Serial.print(" ");
     // Serial.print(pi_state.ctrl_out);
+    Serial.print(pi_state.error_prev);
+    Serial.print(" ");
+    Serial.print(pi_state.integral_prev);
+    Serial.print(" ");
+    Serial.print(pi_state.derivative_prev);
+    // Serial.print(" ");
     // Serial.print(filt_signal);
     Serial.println();
   }
