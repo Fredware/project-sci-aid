@@ -10,11 +10,13 @@
 #define PWM_MAX 255 /*No speed*/
 #define PWM_MIN 0   /*Max speed*/
 #define PWM_DIR_PIN 12
-#define PWM_DBAND 5e-4
+#define PWM_DBAND 1
 
-#define DISPLAY_CTRL true
+#define DISPLAY_CTRL false
 #define DISPLAY_I2C false
+
 #define LOOP_RATE_PIN 3
+#define LOOP_PERIOD 1000 // [mu sec] = 1 kHz
 
 /*User-defined constants*/
 const uint16_t ANGLE_REF = 2468; /*Vertical position approx.*/
@@ -128,6 +130,9 @@ void loop()
   digitalWrite(PWM_DIR_PIN, pwm_dir);
   analogWrite(PWM_OUT_PIN, pwm_out);
 
+  /*Mark loop stop time*/
+  digitalWrite(LOOP_RATE_PIN, LOW);
+
   /*Display Trajectory*/
   if (DISPLAY_CTRL)
   {
@@ -142,12 +147,16 @@ void loop()
     Serial.print(" ");
     Serial.print(pi_state.integral_prev);
     Serial.print(" ");
-    Serial.print(pi_state.derivative_prev);
-    // Serial.print(" ");
+    Serial.print(pi_state.derivative_prev,6);
+    Serial.print(" ");
+    Serial.print(pi_state.ctrl_out);
+    Serial.print(" ");
+    Serial.print(pwm_out);
     // Serial.print(filt_signal);
     Serial.println();
   }
-  /*Mark loop stop time*/
-  digitalWrite(LOOP_RATE_PIN, LOW);
-  delayMicroseconds(100);
+  long stop_time = micros()-time_obs;
+  if (stop_time < LOOP_PERIOD){
+    delayMicroseconds(LOOP_PERIOD-stop_time);
+  }
 }

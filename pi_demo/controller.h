@@ -15,6 +15,9 @@ typedef struct controller_configuration
 
     float tau; // derivative LPF time constant
     float sampling_period; // [seconds]
+
+    float ctrl_out_max;
+    float ctrl_out_min;
 } PIConfig;
 
 typedef struct controller_state
