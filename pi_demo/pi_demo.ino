@@ -6,20 +6,25 @@
 #define ANGLE_REGISTER_ADDRESS 0x0E
 #define SIZE_OF_ANGLE 2 /*Bytes*/
 
+#define OBS_MIN 1614
+#define OBS_MAX 3232
+#define NORM_MIN -809
+#define NORM_MAX 809
+
 #define PWM_OUT_PIN 10 /*TIMER 2*/
 #define PWM_MAX 255 /*No speed*/
 #define PWM_MIN 0   /*Max speed*/
 #define PWM_DIR_PIN 12
 #define PWM_DBAND 0
 
-#define DISPLAY_CTRL false
+#define DISPLAY_CTRL true
 #define DISPLAY_I2C false
 
 #define LOOP_RATE_PIN 3
 #define LOOP_PERIOD 1000 // [mu sec] = 1 kHz
 
 /*User-defined constants*/
-const uint16_t ANGLE_REF = 2468; /*Vertical position approx.*/
+const float ANGLE_REF = -60.0f; /*Vertical position approx.*/
 
 /*PID vars*/
 PIConfig pi_config;
@@ -52,18 +57,18 @@ float filter_signal(float xn)
   return yn;
 }
 
-uint16_t get_setpoint()
+float get_setpoint()
 {
   return ANGLE_REF;
 }
 
-uint16_t request_angle_i2c()
+uint16_t request_angle_i2c(const int device_address, const int num_bytes)
 {
-  Wire.requestFrom(ENCODER_ADDRESS, SIZE_OF_ANGLE);
+  Wire.requestFrom(device_address, num_bytes);
   byte angle_1 = Wire.read();
   byte angle_0 = Wire.read();
   byte temp = 0;
-  if (angle_1 & 0b11110000){
+  if (angle_1 & 0xF0){
     temp = angle_1;
     angle_1 = angle_0;
     angle_0 = temp; 
@@ -112,10 +117,11 @@ void loop()
   digitalWrite(LOOP_RATE_PIN, HIGH);
   /*Time calculations*/
   unsigned long time_obs = micros();
-  uint16_t angle_obs = request_angle_i2c();
-  // float angle_obs_flt = filter_signal(angle_obs);
-  float angle_obs_flt = angle_obs;
-  uint16_t angle_des = get_setpoint(); /*TODO: Replace with Abby's API*/
+  uint16_t angle_obs = request_angle_i2c(ENCODER_ADDRESS, SIZE_OF_ANGLE);
+  float angle_norm = map(angle_obs, OBS_MIN, OBS_MAX, NORM_MIN, NORM_MAX)/float(NORM_MAX)*100.0;
+  // float angle_obs_flt = filter_signal(angle_norm);
+  float angle_obs_flt = angle_norm;
+  float angle_des = get_setpoint(); /*TODO: Replace with Abby's API*/
 
   controller_update(&pi_config, &pi_state, angle_des, angle_obs_flt);
 
@@ -128,7 +134,7 @@ void loop()
 
   /*Execute PWM command*/
   digitalWrite(PWM_DIR_PIN, pwm_dir);
-  analogWrite(PWM_OUT_PIN, pwm_out);
+  analogWrite(PWM_OUT_PIN, round(pwm_out));
 
   /*Mark loop stop time*/
   digitalWrite(LOOP_RATE_PIN, LOW);
@@ -136,22 +142,22 @@ void loop()
   /*Display Trajectory*/
   if (DISPLAY_CTRL)
   {
-    // Serial.print(angle_des);
-    // Serial.print(" ");
+    Serial.print(angle_des);
+    Serial.print(" ");
     // Serial.print(angle_obs);
     // Serial.print(" ");
-    // Serial.print(angle_obs_flt);
-    // Serial.print(" ");
+    Serial.print(angle_obs_flt);
+    Serial.print(" ");
     // Serial.print(pi_state.ctrl_out);
     Serial.print(pi_state.error_prev);
     Serial.print(" ");
-    Serial.print(pi_state.integral_prev);
-    Serial.print(" ");
-    Serial.print(pi_state.derivative_prev,6);
-    Serial.print(" ");
+    // Serial.print(pi_state.integral_prev);
+    // Serial.print(" ");
+    // Serial.print(pi_state.derivative_prev,6);
+    // Serial.print(" ");
     Serial.print(pi_state.ctrl_out);
     Serial.print(" ");
-    Serial.print(pwm_out);
+    Serial.print(round(pwm_out));
     // Serial.print(filt_signal);
     Serial.println();
   }
