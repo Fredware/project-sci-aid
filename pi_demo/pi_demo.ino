@@ -10,7 +10,7 @@
 #define PWM_MAX 255 /*No speed*/
 #define PWM_MIN 0   /*Max speed*/
 #define PWM_DIR_PIN 12
-#define PWM_DBAND 1
+#define PWM_DBAND 0
 
 #define DISPLAY_CTRL false
 #define DISPLAY_I2C false

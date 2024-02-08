@@ -2,9 +2,9 @@
 
 void controller_initialize(PIConfig *pi_config, PIState *pi_state)
 {
-    pi_config->kp = 2e-1;
+    pi_config->kp = 0.000025e-3;
     pi_config->ki = 0.0f;
-    pi_config->kd = 1e-3; 
+    pi_config->kd = 0; //0.003000e-3; //0.0125e-3; 
 
     pi_config->tau = 0.008; // derivative LPF time constant; Fc(-3dB) = (~20)Hz
     pi_config->sampling_period = 0.001; // [seconds] = 1/500 Hz
