@@ -32,7 +32,7 @@ typedef struct controller_state
 } PIState;
 
 void controller_initialize(PIConfig *pi_config, PIState *pi_state);
-void controller_update(PIConfig *pi_config, PIState *pi_state, uint16_t angle_des, float angle_obs);
+void controller_update(PIConfig *pi_config, PIState *pi_state, float angle_des, float angle_obs);
 
 #ifdef __cplusplus
   }

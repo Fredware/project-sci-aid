@@ -2,9 +2,9 @@
 
 void controller_initialize(PIConfig *pi_config, PIState *pi_state)
 {
-    pi_config->kp = 0.000025e-3;
+    pi_config->kp = 2.0f;
     pi_config->ki = 0.0f;
-    pi_config->kd = 0; //0.003000e-3; //0.0125e-3; 
+    pi_config->kd = 0.1f; //0.003000e-3; //0.0125e-3; 
 
     pi_config->tau = 0.008; // derivative LPF time constant; Fc(-3dB) = (~20)Hz
     pi_config->sampling_period = 0.001; // [seconds] = 1/500 Hz
@@ -19,7 +19,7 @@ void controller_initialize(PIConfig *pi_config, PIState *pi_state)
     pi_state->derivative_prev = 0.0f;
 };
 
-void controller_update(PIConfig *pi_config, PIState *pi_state, uint16_t angle_des, float angle_obs)
+void controller_update(PIConfig *pi_config, PIState *pi_state, float angle_des, float angle_obs)
 {
     float error_obs = angle_des - angle_obs;
     // float time_delta = ((float)(time_obs - pi_state->time_prev)) / 1.0e6;
