@@ -1,3 +1,30 @@
+#define LOOP_RATE_PIN 3
+#define LOOP_RATE_PERIOD 1000 // [mu_sec] = 1kHz
+
+#define BAUD_RATE 115200
+
+#define ADC_PIN A7
+
+#define ANGLE_REGISTER_ADDRESS 0x0E
+#define ENCODER_ADDRESS 0x36
+#define SIZE_OF_ANGLE 2 // [bytes]
+
+#define PWM_DIR_PIN 12
+#define PWM_OUT_PIN 10
+#define PWM_MAX 255
+#define PWM_MIN 0
+#define PWM_DEADBAND 0 
+
+#define ANGLE_OBS_MAX 3232
+#define ANGLE_OBS_MIN 1614
+#define ANGLE_NORM_MAX 809
+#define ANGLE_NORM_MIN -809
+
+#define TORQUE_OBS_MAX 1024
+#define TORQUE_OBS_MIN 100
+#define TORQUE_NORM_MAX 100
+#define TORQUE_NORM_MIN -100
+
 void setup(){
     /*Loop rate debug pin*/
     pinMode(LOOP_RATE_PIN, OUTPUT);
