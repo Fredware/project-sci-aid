@@ -28,7 +28,7 @@ typedef struct controller_state
     float derivative_prev;
     // float time_prev;
 
-    float ctrl_out;
+    float out;
 } ControllerState;
 
 void controller_initialize(ControllerConfig *ctrl_config, ControllerState *ctrl_state);

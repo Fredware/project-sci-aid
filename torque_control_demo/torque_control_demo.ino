@@ -3,7 +3,7 @@
 #include "setpoint.h"
 
 #define LOOP_RATE_PIN 3
-#define LOOP_RATE_PERIOD 1000 // [mu_sec] = 1kHz
+#define LOOP_PERIOD 1000 // [mu_sec] = 1kHz
 
 #define BAUD_RATE 115200
 
@@ -32,6 +32,28 @@
 /*Controller Globals*/
 ControllerConfig ctrl_config;
 ControllerState ctrl_state;
+
+/*I2C Sensor*/
+uint16_t request_angle_i2c(const int device_address, const int num_bytes)
+{
+  Wire.requestFrom(device_address, num_bytes);
+  byte angle_1 = Wire.read();
+  byte angle_0 = Wire.read();
+  byte temp = 0;
+  
+  if (angle_1 & 0xF0){
+    temp = angle_1;
+    angle_1 = angle_0;
+    angle_0 = temp; 
+  }
+  
+  uint16_t angle_obs = 0;
+  angle_obs = ((uint16_t)angle_1) << 8;
+  angle_obs += angle_0;
+
+  return angle_obs;
+}
+
 
 void setup(){
     /*Loop rate debug pin*/
