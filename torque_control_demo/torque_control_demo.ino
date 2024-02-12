@@ -1,3 +1,7 @@
+#include <Wire.h>
+#include "controller.h"
+#include "setpoint.h"
+
 #define LOOP_RATE_PIN 3
 #define LOOP_RATE_PERIOD 1000 // [mu_sec] = 1kHz
 
@@ -24,6 +28,10 @@
 #define TORQUE_OBS_MIN 100
 #define TORQUE_NORM_MAX 100
 #define TORQUE_NORM_MIN -100
+
+/*Controller Globals*/
+ControllerConfig ctrl_config;
+ControllerState ctrl_state;
 
 void setup(){
     /*Loop rate debug pin*/
