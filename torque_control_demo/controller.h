@@ -9,23 +9,23 @@
 
 typedef struct controller_configuration
 {
-    float kp;
-    float ki;
-    float kd;
+    float k_position;
+    float k_torque;
+    float k_derivative;
 
-    float tau; // derivative LPF time constant
+//    float tau; // derivative LPF time constant
     float sampling_period; // [seconds]
 
-    float ctrl_out_max;
-    float ctrl_out_min;
+    float out_max;
+    float out_min;
 } ControllerConfig;
 
 typedef struct controller_state
 {
     float angle_prev;
-    float error_prev;
-    float integral_prev;
-    float derivative_prev;
+    // float error_prev;
+    // float integral_prev;
+    // float derivative_prev;
     // float time_prev;
 
     float out;
