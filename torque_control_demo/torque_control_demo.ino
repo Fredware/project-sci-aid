@@ -88,7 +88,7 @@ void loop(){
     uint16_t angle_obs = request_angle_i2c(ENCODER_ADDRESS, SIZE_OF_ANGLE);
     uint16_t torque_obs = analogRead(ADC_PIN);
     float angle_norm = map(angle_obs, ANGLE_OBS_MIN, ANGLE_OBS_MAX, ANGLE_NORM_MIN, ANGLE_NORM_MAX)/float(ANGLE_NORM_MAX)*100.0f;
-    float torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f;
+    float torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f+12.0f;
     float angle_des = get_setpoint();
 
     /*Compute control law output*/
@@ -99,7 +99,7 @@ void loop(){
     float pwm_out = PWM_MAX - fabs(ctrl_state.out);
     if(pwm_out > (PWM_MAX - PWM_DEADBAND)){pwm_out = PWM_MAX;}
     else if(pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
-    
+    else{pwm_out = ceil(pwm_out);}
     /*Execute PWM command*/
     digitalWrite(PWM_DIR_PIN, pwm_dir);
     analogWrite(PWM_OUT_PIN, pwm_out);
@@ -109,7 +109,11 @@ void loop(){
     
     /*Enforce loop rate*/
     long loop_stop = micros() - loop_start;
-    if(loop_stop < LOOP_PERIOD){
-        delayMicroseconds(LOOP_PERIOD - loop_stop);
+    while(loop_stop < LOOP_PERIOD){
+      // Serial.println(angle_norm);
+      // Serial.println(torque_norm);
+      // Serial.println(ctrl_state.out);
+      // Serial.println(pwm_out);
+      loop_stop = micros() - loop_start;
     } 
 }
