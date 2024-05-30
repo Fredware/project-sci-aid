@@ -113,10 +113,12 @@ void loop(){
 
     /*Perform PWM adjustmemts*/
     char pwm_dir = ctrl_state.out > 0;
-    float pwm_out = PWM_MAX - fabs(ctrl_state.out);
-    if(pwm_out > (PWM_MAX - PWM_DEADBAND)){pwm_out = PWM_MAX;}
-    else if(pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
-    else{pwm_out = ceil(pwm_out);}
+    // float pwm_out = PWM_MAX - fabs(ctrl_state.out);
+    // if(pwm_out > (PWM_MAX - PWM_DEADBAND)){pwm_out = PWM_MAX;}
+    // else if(pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
+    // else{pwm_out = ceil(pwm_out);}
+    float pwm_out = fabs(ctrl_state.out);
+    if (pwm_out <1){pwm_out=1;};
     /*Execute PWM command*/
     if(!DEBUG_MODE)
     {
@@ -136,9 +138,9 @@ void loop(){
         Serial.print(angle_norm, 2); Serial.print(" ");
         Serial.print(angle_des-angle_norm, 2); Serial.print(" ");
         // Serial.println(torque_obs);
-        // Serial.print(torque_norm, 3); Serial.print(" ");
+        Serial.print(torque_norm, 3); Serial.print(" ");
         Serial.print(ctrl_state.out); Serial.print(" ");
-        Serial.print(PWM_MAX - fabs(ctrl_state.out),0); Serial.print(" ");
+        // Serial.print(PWM_MAX - fabs(ctrl_state.out),0); Serial.print(" ");
         Serial.print(pwm_out, 0); Serial.print(" ");
         Serial.println();
       }
