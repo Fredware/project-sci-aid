@@ -1,7 +1,6 @@
 #define PWM_PIN 10  //OC2A
 #define PWM_DIR_PIN 12
 
-
 #define BLDC_HALL_PIN_1 6
 #define BLDC_HALL_PIN_2 5
 #define BLDC_HALL_PIN_3 7

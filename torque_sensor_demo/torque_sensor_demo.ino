@@ -14,5 +14,7 @@ Serial.print(125);
 Serial.print(" ");
 Serial.print(flux_density);
 Serial.print(" ");
+Serial.print(log(flux_density));
+Serial.print(" ");
 Serial.println(1024);
 }
