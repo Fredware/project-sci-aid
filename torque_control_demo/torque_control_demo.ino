@@ -2,15 +2,15 @@
 #include "controller.h"
 #include "setpoint.h"
 
-#define DEBUG_MODE 0
-#define LOG_MODE 0
+#define DEBUG_MODE 0 /*Suppress write operation for PWM_DIR and PWM_OUT*/
+#define LOG_MODE 1
 
 #define LOOP_RATE_PIN 3
 #define LOOP_PERIOD 1000 // [mu_sec] = 1kHz
 
 #define BAUD_RATE 115200
 
-#define ADC_PIN A7
+#define ADC_PIN A8
 
 #define ANGLE_REGISTER_ADDRESS 0x0E
 #define ENCODER_ADDRESS 0x36
@@ -138,7 +138,7 @@ void loop(){
         Serial.print(angle_norm, 2); Serial.print(" ");
         Serial.print(angle_des-angle_norm, 2); Serial.print(" ");
         // Serial.println(torque_obs);
-        Serial.print(torque_norm, 3); Serial.print(" ");
+        // Serial.print(torque_norm, 3); Serial.print(" ");
         Serial.print(ctrl_state.out); Serial.print(" ");
         // Serial.print(PWM_MAX - fabs(ctrl_state.out),0); Serial.print(" ");
         Serial.print(pwm_out, 0); Serial.print(" ");
