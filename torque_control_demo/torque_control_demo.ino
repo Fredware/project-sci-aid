@@ -11,6 +11,7 @@
 #define BAUD_RATE 115200
 
 #define ADC_PIN A8
+#define POT_PIN A0
 
 #define ANGLE_REGISTER_ADDRESS 0x0E
 #define ENCODER_ADDRESS 0x36
@@ -66,6 +67,8 @@ void setup(){
     pinMode(LOOP_RATE_PIN, OUTPUT);
     /*ADC setup*/
     pinMode(ADC_PIN, INPUT);
+    /*Configfure to read setpoint from analog pot*/
+    pinMode(POT_PIN, INPUT);
     /*PWM setup*/
     pinMode(PWM_DIR_PIN, OUTPUT);
     pinMode(PWM_OUT_PIN, OUTPUT);
@@ -106,7 +109,9 @@ void loop(){
     uint16_t torque_obs = analogRead(ADC_PIN);
     float angle_norm = map(angle_obs, ANGLE_OBS_MIN, ANGLE_OBS_MAX, ANGLE_NORM_MIN, ANGLE_NORM_MAX)/float(ANGLE_NORM_MAX)*100.0f;
     float torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f-torque_bias;
-    float angle_des = get_setpoint();
+    // float angle_des = get_setpoint();
+    // float angle_des = map(analogRead(POT_PIN), 0, 1023, -100, 100);
+    float angle_des = 0.0f;
 
     /*Compute control law output*/
     controller_update(&ctrl_config, &ctrl_state, angle_des, angle_norm, torque_norm);
