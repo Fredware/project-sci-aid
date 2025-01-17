@@ -5,12 +5,12 @@
 #define ANGLE_REGISTER_ADDRESS 0x0E
 #define SIZE_OF_ANGLE 2 /*Bytes*/
 
-#define PWM_PIN 11
+#define PWM_PIN 10
 #define PWM_MAX 255 /*255*/
 #define PWM_MIN 0
 #define DIR_PIN 12
 
-const uint16_t ANGLE_SETPOINT = 2445; /*Vertical position*/
+const uint16_t ANGLE_SETPOINT = 2000; /*Vertical position*/
 const float k_p = 0.05;
 
 void setup() 
@@ -35,7 +35,7 @@ void loop()
   uint16_t angle_meas = ((uint16_t) angle_1) << 8 | angle_0;
 
   int angle_error = ANGLE_SETPOINT - angle_meas;
-  
+  Serial.println(angle_error);
   char pwm_dir = angle_error > 0; /*pos -> cw; neg -> ccw*/
   digitalWrite(DIR_PIN, pwm_dir);
 
@@ -46,6 +46,7 @@ void loop()
   else if(pwm_out < PWM_MIN){
     pwm_out = PWM_MIN;
   }
+  Serial.println(pwm_out);
   analogWrite(PWM_PIN, pwm_out);
   delay(100);
 }

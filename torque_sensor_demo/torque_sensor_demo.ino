@@ -1,4 +1,4 @@
-#define ADC_PIN A7
+#define ADC_PIN A8
 #define BAUD_RATE 115200
 
 void setup(){
