@@ -1,28 +1,35 @@
 #include <Wire.h>
 #include "controller.h"
 
-#define BAUD_RATE 115200
-#define ENCODER_ADDRESS 0x36
-#define ANGLE_REGISTER_ADDRESS 0x0E
-#define SIZE_OF_ANGLE 2 /*Bytes*/
-
-#define OBS_MIN 1614
-#define OBS_MAX 3232
-#define NORM_MIN -809
-#define NORM_MAX 809
-
-#define PWM_OUT_PIN 10 /*TIMER 2*/
-#define PWM_BRK_PIN 8
-#define PWM_MAX 255 /*No speed*/
-#define PWM_MIN 0   /*Max speed*/
-#define PWM_DIR_PIN 12
-#define PWM_DBAND 0
-
+#define PWM_ENABLED true
+#define SERIAL_ENABLED true
 #define DISPLAY_CTRL true
 #define DISPLAY_I2C false
 
 #define LOOP_RATE_PIN 3
 #define LOOP_PERIOD 1000 // [mu sec] = 1 kHz
+
+#define BAUD_RATE 115200
+
+#define ENCODER_ADDRESS 0x36
+#define ANGLE_REGISTER_ADDRESS 0x0E
+#define SIZE_OF_ANGLE 2 /*Bytes*/
+
+#define SETPOINT_PIN A2
+#define SETPOINT_MIN -90
+#define SETPOINT_MAX 90
+
+#define ANGLE_OBS_MIN 1600
+#define ANGLE_OBS_MAX 3220
+#define ANGLE_NORM_MIN -810
+#define ANGLE_NORM_MAX 810
+
+#define PWM_DIR_PIN 12
+#define PWM_OUT_PIN 10 /*TIMER 2*/
+#define PWM_BRK_PIN 8
+#define PWM_MAX 255 /*No speed*/
+#define PWM_MIN 0   /*Max speed*/
+#define PWM_DEADBAND 0
 
 /*User-defined constants*/
 const float ANGLE_REF = -50.0f; /*Vertical position approx.*/
@@ -60,7 +67,8 @@ float filter_signal(float xn)
 
 float get_setpoint()
 {
-  return ANGLE_REF;
+  long pos_setpoint = map(analogRead(SETPOINT_PIN), 0, 1023, SETPOINT_MIN, SETPOINT_MAX);
+  return pos_setpoint;
 }
 
 uint16_t request_angle_i2c(const int device_address, const int num_bytes)
@@ -69,6 +77,7 @@ uint16_t request_angle_i2c(const int device_address, const int num_bytes)
   byte angle_1 = Wire.read();
   byte angle_0 = Wire.read();
   byte temp = 0;
+
   if (angle_1 & 0xF0){
     temp = angle_1;
     angle_1 = angle_0;
@@ -95,6 +104,8 @@ void setup()
 {
   /*Loop rate*/
   pinMode(LOOP_RATE_PIN, OUTPUT);
+  /*ADC Setup*/
+  pinMode(SETPOINT_PIN, INPUT);
   /*PWM SETUP*/
   pinMode(PWM_DIR_PIN, OUTPUT);
   pinMode(PWM_OUT_PIN, OUTPUT);
@@ -118,10 +129,11 @@ void loop()
 {
   /*Mark loop start time*/
   digitalWrite(LOOP_RATE_PIN, HIGH);
+
   /*Time calculations*/
   unsigned long time_obs = micros();
   uint16_t angle_obs = request_angle_i2c(ENCODER_ADDRESS, SIZE_OF_ANGLE);
-  float angle_norm = map(angle_obs, OBS_MIN, OBS_MAX, NORM_MIN, NORM_MAX)/float(NORM_MAX)*100.0;
+  float angle_norm = map(angle_obs, ANGLE_OBS_MIN, ANGLE_OBS_MAX, ANGLE_NORM_MIN, ANGLE_NORM_MAX)/float(ANGLE_NORM_MAX)*100.0f;
   // float angle_obs_flt = filter_signal(angle_norm);
   float angle_obs_flt = angle_norm;
   float angle_des = get_setpoint(); /*TODO: Replace with Abby's API*/
@@ -132,12 +144,14 @@ void loop()
   char pwm_dir = pi_state.ctrl_out > 0; /*pos -> cw; neg -> ccw*/
   float pwm_out = PWM_MAX - fabs(pi_state.ctrl_out);
   /*Output Clamping*/
-  if (pwm_out > (PWM_MAX - PWM_DBAND)){ pwm_out = PWM_MAX;}
+  if (pwm_out > (PWM_MAX - PWM_DEADBAND)){ pwm_out = PWM_MAX;}
   else if (pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
 
   /*Execute PWM command*/
-  digitalWrite(PWM_DIR_PIN, pwm_dir);
-  analogWrite(PWM_OUT_PIN, round(pwm_out));
+  if(PWM_ENABLED){
+    digitalWrite(PWM_DIR_PIN, pwm_dir);
+    analogWrite(PWM_OUT_PIN, round(pwm_out));
+  }
 
   /*Mark loop stop time*/
   digitalWrite(LOOP_RATE_PIN, LOW);
