@@ -12,6 +12,7 @@
 #define NORM_MAX 809
 
 #define PWM_OUT_PIN 10 /*TIMER 2*/
+#define PWM_BRK_PIN 8
 #define PWM_MAX 255 /*No speed*/
 #define PWM_MIN 0   /*Max speed*/
 #define PWM_DIR_PIN 12
@@ -24,7 +25,7 @@
 #define LOOP_PERIOD 1000 // [mu sec] = 1 kHz
 
 /*User-defined constants*/
-const float ANGLE_REF = -60.0f; /*Vertical position approx.*/
+const float ANGLE_REF = -50.0f; /*Vertical position approx.*/
 
 /*PID vars*/
 PIConfig pi_config;
@@ -97,6 +98,8 @@ void setup()
   /*PWM SETUP*/
   pinMode(PWM_DIR_PIN, OUTPUT);
   pinMode(PWM_OUT_PIN, OUTPUT);
+  pinMode(PWM_BRK_PIN, OUTPUT);
+  digitalWrite(PWM_BRK_PIN, LOW); /*HIGH = BREAK; LOW = CONTINUE*/
   /***Non-prescaled PWM: =~ 31.3kHz*/
   TCCR2A = _BV(COM2A1) | _BV(COM2A0) | _BV(COM2B1) | _BV(COM2B0) | _BV(WGM20);
   TCCR2B = _BV(CS20);
