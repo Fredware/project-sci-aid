@@ -24,16 +24,24 @@ void setup() {
 
 void loop() 
 {
-  pwm_val += pwm_increment;
-  if (pwm_val >= 250) {
-    pwm_val = 250;
-    pwm_increment = -10; 
-  }
-  if (pwm_val <= 40){
-    pwm_val = 40;
-    pwm_increment = 10;
-  }
+  // if (pwm_val >= 255) {
+  //   pwm_val = 255;
+  //   pwm_increment = -10; 
+  // }
+  // if (pwm_val <= 0){
+  //   pwm_val = 0;
+  //   pwm_increment = 10;
+  // }
+  int delay_ms = 3000;
+  pwm_val = 150;
   Serial.println(pwm_val);
   analogWrite(PWM_OUT_PIN, pwm_val);
-  delay(1500);
+  delay(delay_ms);
+  pwm_val = 255;
+  Serial.println(pwm_val);
+  analogWrite(PWM_OUT_PIN, pwm_val);
+  delay(delay_ms);
+  // digitalWrite(PWM_DIR_PIN, HIGH);
+  // delay(1500);
+  // digitalWrite(PWM_DIR_PIN, LOW);
 }
