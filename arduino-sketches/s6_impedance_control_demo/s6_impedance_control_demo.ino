@@ -1,42 +1,56 @@
 #include <Wire.h>
 #include "controller.h"
-#include "setpoint.h"
+// #include "setpoint.h"
 
-#define DEBUG_MODE 0 /*Suppress write operation for PWM_DIR and PWM_OUT*/
-#define LOG_MODE 1
-
-#define LOOP_RATE_PIN 3
-#define LOOP_PERIOD 1000 // [mu_sec] = 1kHz
-
+#define PWM_ENABLED true /*Enable write operation for PWM_DIR and PWM_OUT*/
 #define BAUD_RATE 115200
+#define SERIAL_ENABLED true
+#define PRINT_SET true
+#define PRINT_POS true
+#define PRINT_ERR true
+#define PRINT_TORQ true
+#define PRINT_CTRL true
 
-#define ADC_PIN A8
-#define POT_PIN A0
+#define LOOP_PERIOD 1000 /* [mu_sec] => 1kHz */
+#define LOOP_RATE_PIN 3 /* Attach to oscilloscope to verify loop rate*/
+
+#define SETPOINT_PIN A2 /* Potentiometer for desired position */
+#define SETPOINT_MIN -90
+#define SETPOINT_MAX 90
 
 #define ANGLE_REGISTER_ADDRESS 0x0E
 #define ENCODER_ADDRESS 0x36
-#define SIZE_OF_ANGLE 2 // [bytes]
+#define SIZE_OF_ANGLE_OBS 2 // [bytes]
+#define ANGLE_OBS_MAX 3220
+#define ANGLE_OBS_MIN 1600
+#define ANGLE_NORM_MAX 810
+#define ANGLE_NORM_MIN -810
+
+#define TORQUE_ADC_PIN A7
+#define TORQUE_OBS_MAX 15
+#define TORQUE_OBS_MIN -15
+#define TORQUE_NORM_MAX 1
+#define TORQUE_NORM_MIN -1
+#define TORQUE_BIAS_SAMPLES 4096
 
 #define PWM_DIR_PIN 12
 #define PWM_OUT_PIN 10
-#define PWM_MAX 255
-#define PWM_MIN 0
-#define PWM_DEADBAND 0 
+#define PWM_BRK_PIN 8
+#define PWM_OUT_MAX 254 /*ShieldV1.0 => Max speed*/
+#define PWM_OUT_MIN 1 /*ShieldV1.0 => No speed*/
+#define PWM_DEADBAND 0
 
-#define ANGLE_OBS_MAX 3232
-#define ANGLE_OBS_MIN 1614
-#define ANGLE_NORM_MAX 809
-#define ANGLE_NORM_MIN -809
-
-#define TORQUE_OBS_MAX 1024
-#define TORQUE_OBS_MIN 100
-#define TORQUE_NORM_MAX 100
-#define TORQUE_NORM_MIN -100
-#define TORQUE_BIAS_SAMPLES 4096
 
 /*Controller Globals*/
 ControllerConfig ctrl_config;
 ControllerState ctrl_state;
+
+/*ADC Position*/
+float get_setpoint()
+{
+  long pos_setpoint = map(analogRead(SETPOINT_PIN), 0, 1023, SETPOINT_MIN, SETPOINT_MAX);
+  return pos_setpoint;
+}
 
 /*I2C Sensor*/
 uint16_t request_angle_i2c(const int device_address, const int num_bytes)
@@ -61,17 +75,18 @@ uint16_t request_angle_i2c(const int device_address, const int num_bytes)
 
 float torque_bias = 0;
 
-
 void setup(){
     /*Loop rate debug pin*/
     pinMode(LOOP_RATE_PIN, OUTPUT);
     /*ADC setup*/
-    pinMode(ADC_PIN, INPUT);
+    pinMode(TORQUE_ADC_PIN, INPUT);
     /*Configfure to read setpoint from analog pot*/
-    pinMode(POT_PIN, INPUT);
+    pinMode(SETPOINT_PIN, INPUT);
     /*PWM setup*/
     pinMode(PWM_DIR_PIN, OUTPUT);
     pinMode(PWM_OUT_PIN, OUTPUT);
+    pinMode(PWM_BRK_PIN, OUTPUT);
+    digitalWrite(PWM_BRK_PIN, LOW); /* HIGH:Break; LOW:Continue*/
     /****Non-prescaled phase-correct PWM @~31,3kHz*/
     TCCR2A = _BV(COM2A1) | _BV(COM2A0) | _BV(COM2B1) | _BV(COM2B0) | _BV(WGM20);
     TCCR2B = _BV(CS20);
@@ -87,68 +102,75 @@ void setup(){
     /*Initialize controller configuration*/
     controller_initialize(&ctrl_config, &ctrl_state);
     /*Torque Sensor Calibration*/
-    uint16_t torque_obs;
-    float torque_norm;
-    for(int i =1; i<TORQUE_BIAS_SAMPLES; i++){
-      torque_obs = analogRead(ADC_PIN);
-      torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f;
-      torque_bias += torque_norm;
-    }
-    torque_bias = torque_bias/TORQUE_BIAS_SAMPLES;
+    // uint16_t torque_obs;
+    // float torque_norm;
+    // for(int i =1; i<TORQUE_BIAS_SAMPLES; i++){
+    //   torque_obs = analogRead(ADC_PIN);
+    //   torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f;
+    //   torque_bias += torque_norm;
+    // }
+    // torque_bias = torque_bias/TORQUE_BIAS_SAMPLES;
 }
 
 void loop(){
-    /*Broadcast loop start*/
+    /*Signal loop start to oscilloscope*/
     digitalWrite(LOOP_RATE_PIN, HIGH);
-    
+
     /*Loop rate timekeeping*/
     unsigned long loop_start = micros();
     
     /*Get sensor readings and normalize values*/
-    uint16_t angle_obs = request_angle_i2c(ENCODER_ADDRESS, SIZE_OF_ANGLE);
-    uint16_t torque_obs = analogRead(ADC_PIN);
+    float angle_des = get_setpoint();
+    uint16_t angle_obs = request_angle_i2c(ENCODER_ADDRESS, SIZE_OF_ANGLE_OBS);
+    uint16_t hall_obs = analogRead(TORQUE_ADC_PIN);
+    double torque_obs = -0.0013*hall_obs*torque_obs + 0.4982*hall_obs -157.92;
+
     float angle_norm = map(angle_obs, ANGLE_OBS_MIN, ANGLE_OBS_MAX, ANGLE_NORM_MIN, ANGLE_NORM_MAX)/float(ANGLE_NORM_MAX)*100.0f;
     float torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f-torque_bias;
-    // float angle_des = get_setpoint();
-    // float angle_des = map(analogRead(POT_PIN), 0, 1023, -100, 100);
-    float angle_des = 0.0f;
 
     /*Compute control law output*/
     controller_update(&ctrl_config, &ctrl_state, angle_des, angle_norm, torque_norm);
 
     /*Perform PWM adjustmemts*/
+    /** **** PWM V1.0 ***** */
     char pwm_dir = ctrl_state.out > 0;
-    // float pwm_out = PWM_MAX - fabs(ctrl_state.out);
-    // if(pwm_out > (PWM_MAX - PWM_DEADBAND)){pwm_out = PWM_MAX;}
-    // else if(pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
-    // else{pwm_out = ceil(pwm_out);}
-    float pwm_out = fabs(ctrl_state.out);
-    if (pwm_out <1){pwm_out=1;};
+    float pwm_out = PWM_OUT_MAX - fabs(ctrl_state.out);
+    if(pwm_out > (PWM_OUT_MAX - PWM_DEADBAND)) {pwm_out = PWM_OUT_MAX;}
+    else if(pwm_out < PWM_OUT_MIN) {pwm_out = PWM_OUT_MIN;}
+    else {pwm_out = ceil(pwm_out);}
+    /** ******************* */
+    
+    /** **** PWM V2.0 ***** */
+    // float pwm_out = fabs(ctrl_state.out);
+    // if (pwm_out <1){pwm_out=1;};
+    /** ******************* */
+
     /*Execute PWM command*/
-    if(!DEBUG_MODE)
+    if(PWM_ENABLED)
     {
       digitalWrite(PWM_DIR_PIN, pwm_dir);
       analogWrite(PWM_OUT_PIN, pwm_out);
     }
 
-    /*Broadcast loop stop*/
+    /*Signal loop stop to oscilloscope*/
     digitalWrite(LOOP_RATE_PIN, LOW);
     
     /*Enforce loop rate*/
     long loop_stop = micros() - loop_start;
     while(loop_stop < LOOP_PERIOD){
       // Serial.print(angle_obs, HEX); Serial.print(" ");
-      if(LOG_MODE){
-        Serial.print(angle_des, 2); Serial.print(" ");
-        Serial.print(angle_norm, 2); Serial.print(" ");
-        Serial.print(angle_des-angle_norm, 2); Serial.print(" ");
-        // Serial.println(torque_obs);
-        // Serial.print(torque_norm, 3); Serial.print(" ");
-        Serial.print(ctrl_state.out); Serial.print(" ");
-        // Serial.print(PWM_MAX - fabs(ctrl_state.out),0); Serial.print(" ");
-        Serial.print(pwm_out, 0); Serial.print(" ");
+      if(SERIAL_ENABLED){
+        if (PRINT_SET) { Serial.print(angle_des, 2); Serial.print(" ");}
+        if (PRINT_POS) { Serial.print(angle_norm, 2); Serial.print(" ");}        
+        if (PRINT_ERR) { Serial.print(angle_des-angle_norm, 2); Serial.print(" ");}
+        // Serial.print(ctrl_state.out); Serial.print(" ");
+        if (PRINT_CTRL) { Serial.print(atoi(pwm_dir)); Serial.print(" ");
+                          Serial.print(pwm_out, 0); Serial.print(" ");
+                          Serial.print(ctrl_state.out, 0); Serial.print(" ");
+                        }
+        if (PRINT_TORQ) { Serial.print(torque_obs, 2); Serial.print(" ");}
         Serial.println();
       }
       loop_stop = micros() - loop_start;
-    } 
+    }
 }

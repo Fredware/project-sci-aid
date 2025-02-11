@@ -27,8 +27,8 @@
 #define PWM_DIR_PIN 12
 #define PWM_OUT_PIN 10 /*TIMER 2*/
 #define PWM_BRK_PIN 8
-#define PWM_MAX 255 /*No speed*/
-#define PWM_MIN 0   /*Max speed*/
+#define PWM_MAX 254 /*No speed*/
+#define PWM_MIN 1   /*Max speed*/
 #define PWM_DEADBAND 0
 
 /*User-defined constants*/
@@ -142,7 +142,8 @@ void loop()
 
   /*Map control signal to PWM*/
   char pwm_dir = pi_state.ctrl_out > 0; /*pos -> cw; neg -> ccw*/
-  float pwm_out = PWM_MAX - fabs(pi_state.ctrl_out);
+  // float pwm_out = PWM_MAX - fabs(pi_state.ctrl_out);
+  float pwm_out = fabs(pi_state.ctrl_out);
   /*Output Clamping*/
   if (pwm_out > (PWM_MAX - PWM_DEADBAND)){ pwm_out = PWM_MAX;}
   else if (pwm_out < PWM_MIN){pwm_out = PWM_MIN;}
@@ -172,6 +173,8 @@ void loop()
     // Serial.print(" ");
     // Serial.print(pi_state.derivative_prev,6);
     // Serial.print(" ");
+    Serial.print(atoi(pwm_dir));
+    Serial.print(" ");
     Serial.print(pi_state.ctrl_out);
     Serial.print(" ");
     Serial.print(round(pwm_out));
