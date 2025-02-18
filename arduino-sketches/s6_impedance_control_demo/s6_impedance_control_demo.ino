@@ -2,13 +2,15 @@
 #include "controller.h"
 // #include "setpoint.h"
 
-#define PWM_ENABLED true /*Enable write operation for PWM_DIR and PWM_OUT*/
+#define PWM_ENABLED false /*Enable write operation for PWM_DIR and PWM_OUT*/
 #define BAUD_RATE 115200
 #define SERIAL_ENABLED true
 #define PRINT_SET true
 #define PRINT_POS true
+#define PRINT_POS_I2C true
 #define PRINT_ERR true
 #define PRINT_TORQ true
+#define PRINT_TORQ_ADC true
 #define PRINT_CTRL true
 
 #define LOOP_PERIOD 1000 /* [mu_sec] => 1kHz */
@@ -34,7 +36,7 @@
 #define TORQUE_BIAS_SAMPLES 4096
 
 #define PWM_DIR_PIN 12
-#define PWM_OUT_PIN 10
+#define PWM_OUT_PIN 10 /*OC2A*/
 #define PWM_BRK_PIN 8
 #define PWM_OUT_MAX 254 /*ShieldV1.0 => Max speed*/
 #define PWM_OUT_MIN 1 /*ShieldV1.0 => No speed*/
@@ -48,7 +50,7 @@ ControllerState ctrl_state;
 /*ADC Position*/
 float get_setpoint()
 {
-  long pos_setpoint = map(analogRead(SETPOINT_PIN), 0, 1023, SETPOINT_MIN, SETPOINT_MAX);
+  float pos_setpoint = map(analogRead(SETPOINT_PIN), 0, 1023, SETPOINT_MIN, SETPOINT_MAX)/float(SETPOINT_MAX)*100.0f; // map returns type long
   return pos_setpoint;
 }
 
@@ -161,14 +163,16 @@ void loop(){
       // Serial.print(angle_obs, HEX); Serial.print(" ");
       if(SERIAL_ENABLED){
         if (PRINT_SET) { Serial.print(angle_des, 2); Serial.print(" ");}
-        if (PRINT_POS) { Serial.print(angle_norm, 2); Serial.print(" ");}        
+        if (PRINT_POS) { Serial.print(angle_norm, 2); Serial.print(" ");}  
+        if (PRINT_POS_I2C) {Serial.print(angle_obs); Serial.print(" ");}      
         if (PRINT_ERR) { Serial.print(angle_des-angle_norm, 2); Serial.print(" ");}
         // Serial.print(ctrl_state.out); Serial.print(" ");
         if (PRINT_CTRL) { Serial.print(atoi(pwm_dir)); Serial.print(" ");
                           Serial.print(pwm_out, 0); Serial.print(" ");
                           Serial.print(ctrl_state.out, 0); Serial.print(" ");
                         }
-        if (PRINT_TORQ) { Serial.print(torque_obs, 2); Serial.print(" ");}
+        if (PRINT_TORQ) { Serial.print(torque_norm, 2); Serial.print(" ");}
+        if (PRINT_TORQ_ADC){Serial.print(hall_obs); Serial.print(" ");}
         Serial.println();
       }
       loop_stop = micros() - loop_start;
