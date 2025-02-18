@@ -1,7 +1,7 @@
 #include "controller.h"
 
 void controller_initialize(ControllerConfig *ctrl_config, ControllerState *ctrl_state){
-    ctrl_config->k_position = 50.0f;   // Min: 0.0f; Max: 0.250f; Orig: 0.250f;
+    ctrl_config->k_position = 10.0f;   // Min: 0.0f; Max: 0.250f; Orig: 0.250f;
     ctrl_config->k_torque = 0.0f; //200.000f;     // Min: 1.5f; Max: 0.000f; Orig: 1.000f;
     ctrl_config->k_derivative = 0.0f; // Min: 0.0f; Max: 0.005f; Orig: 0.005f;
 

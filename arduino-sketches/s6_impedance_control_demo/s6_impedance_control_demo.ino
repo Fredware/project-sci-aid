@@ -2,16 +2,18 @@
 #include "controller.h"
 // #include "setpoint.h"
 
-#define PWM_ENABLED false /*Enable write operation for PWM_DIR and PWM_OUT*/
+#define PWM_ENABLED true /*Enable write operation for PWM_DIR and PWM_OUT*/
 #define BAUD_RATE 115200
 #define SERIAL_ENABLED true
 #define PRINT_SET true
 #define PRINT_POS true
-#define PRINT_POS_I2C true
+#define PRINT_POS_I2C false
 #define PRINT_ERR true
-#define PRINT_TORQ true
-#define PRINT_TORQ_ADC true
-#define PRINT_CTRL true
+#define PRINT_CTRL_DIR false
+#define PRINT_CTRL_OUT true
+#define PRINT_CTRL_SAT true
+#define PRINT_TORQ false
+#define PRINT_TORQ_ADC false
 
 #define LOOP_PERIOD 1000 /* [mu_sec] => 1kHz */
 #define LOOP_RATE_PIN 3 /* Attach to oscilloscope to verify loop rate*/
@@ -38,8 +40,8 @@
 #define PWM_DIR_PIN 12
 #define PWM_OUT_PIN 10 /*OC2A*/
 #define PWM_BRK_PIN 8
-#define PWM_OUT_MAX 254 /*ShieldV1.0 => Max speed*/
-#define PWM_OUT_MIN 1 /*ShieldV1.0 => No speed*/
+#define PWM_OUT_MAX 254 /*ShieldV1.0: 255=NO_SPEED and 254=HIGH_SPEED*/
+#define PWM_OUT_MIN 1 /*ShieldV1.0: 0=MAX_SPEED and 1=LOW_SPEED*/
 #define PWM_DEADBAND 0
 
 
@@ -135,8 +137,8 @@ void loop(){
 
     /*Perform PWM adjustmemts*/
     /** **** PWM V1.0 ***** */
-    char pwm_dir = ctrl_state.out > 0;
-    float pwm_out = PWM_OUT_MAX - fabs(ctrl_state.out);
+    bool pwm_dir = ctrl_state.out > 0;
+    float pwm_out = fabs(ctrl_state.out);
     if(pwm_out > (PWM_OUT_MAX - PWM_DEADBAND)) {pwm_out = PWM_OUT_MAX;}
     else if(pwm_out < PWM_OUT_MIN) {pwm_out = PWM_OUT_MIN;}
     else {pwm_out = ceil(pwm_out);}
@@ -164,13 +166,12 @@ void loop(){
       if(SERIAL_ENABLED){
         if (PRINT_SET) { Serial.print(angle_des, 2); Serial.print(" ");}
         if (PRINT_POS) { Serial.print(angle_norm, 2); Serial.print(" ");}  
-        if (PRINT_POS_I2C) {Serial.print(angle_obs); Serial.print(" ");}      
+        if (PRINT_POS_I2C) { Serial.print(angle_obs); Serial.print(" ");}      
         if (PRINT_ERR) { Serial.print(angle_des-angle_norm, 2); Serial.print(" ");}
         // Serial.print(ctrl_state.out); Serial.print(" ");
-        if (PRINT_CTRL) { Serial.print(atoi(pwm_dir)); Serial.print(" ");
-                          Serial.print(pwm_out, 0); Serial.print(" ");
-                          Serial.print(ctrl_state.out, 0); Serial.print(" ");
-                        }
+        if (PRINT_CTRL_DIR) { Serial.print(pwm_dir); Serial.print(" ");}
+        if (PRINT_CTRL_OUT) { Serial.print(ctrl_state.out, 0); Serial.print(" ");}
+        if (PRINT_CTRL_SAT) { Serial.print(pwm_out, 0); Serial.print(" ");}
         if (PRINT_TORQ) { Serial.print(torque_norm, 2); Serial.print(" ");}
         if (PRINT_TORQ_ADC){Serial.print(hall_obs); Serial.print(" ");}
         Serial.println();
