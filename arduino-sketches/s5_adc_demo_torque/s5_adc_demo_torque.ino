@@ -1,4 +1,4 @@
-#define ADC_PIN A8
+#define ADC_PIN A7
 #define BAUD_RATE 115200
 
 void setup(){
@@ -8,13 +8,9 @@ Serial.begin(BAUD_RATE);
 
 void loop(){
 int flux_density = analogRead(ADC_PIN);
-Serial.print(0);
-Serial.print(" ");
-Serial.print(125);
-Serial.print(" ");
-Serial.print(flux_density);
-Serial.print(" ");
-Serial.print(log(flux_density));
-Serial.print(" ");
-Serial.println(1024);
+int force = 0.0048*flux_density*flux_density - 2.7357*flux_density + 376.7266; // polyfit ndeg=2
+Serial.print(flux_density); Serial.print(" ");
+Serial.print(100); Serial.print(" ");
+Serial.print(1024); Serial.print(" ");
+Serial.println("");
 }

@@ -2,9 +2,13 @@
 #define PWM_OUT_PIN 10 //OC2A
 #define PWM_BRK_PIN 8
 
+#define PWM_MAX 255
+#define PWM_MIN 0
 
-unsigned int pwm_val = 10;
-int pwm_increment = 10;
+unsigned int pwm_magnitude = 1;
+bool pwm_direction = true;
+int pwm_increment = 15;
+unsigned int delay_ms = 10e3;
 
 void setup() {
     /*Non-prescaled PWM: =~ 31.3kHz*/
@@ -19,21 +23,25 @@ void setup() {
   digitalWrite(PWM_BRK_PIN, LOW); /*HIGH = BREAK; LOW = CONTINUE*/
 
   pinMode(PWM_OUT_PIN, OUTPUT);
-  analogWrite(PWM_OUT_PIN, 1); /*Ideally 0, but 0 = MAX_SPEED = 255*/
 }
 
 void loop() 
 {
-  pwm_val += pwm_increment;
-  if (pwm_val >= 250) {
-    pwm_val = 250;
-    pwm_increment = -10; 
+  Serial.print(pwm_direction);
+  Serial.print(" ");
+  Serial.println(pwm_magnitude);
+  digitalWrite(PWM_DIR_PIN, pwm_direction);
+  analogWrite(PWM_OUT_PIN, pwm_magnitude); /*Ideally 0, but 0 = MAX_SPEED = 255*/
+  delay(delay_ms);
+
+  pwm_direction = !pwm_direction;
+  pwm_magnitude += pwm_increment;
+  if (pwm_magnitude >= PWM_MAX){
+    pwm_magnitude = PWM_MAX-1;
+    pwm_increment = -1*pwm_increment;
   }
-  if (pwm_val <= 40){
-    pwm_val = 40;
-    pwm_increment = 10;
+  if (pwm_magnitude <= PWM_MIN){
+    pwm_magnitude = PWM_MIN+1;
+    pwm_increment = -1*pwm_increment;
   }
-  Serial.println(pwm_val);
-  analogWrite(PWM_OUT_PIN, pwm_val);
-  delay(1500);
 }

@@ -1,9 +1,14 @@
-void setup() {
-  // put your setup code here, to run once:
+#define SETPOINT_PIN A2
 
+void setup() {
+  pinMode(SETPOINT_PIN, INPUT);
+  Serial.begin(115200);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+  int pot_val = analogRead(SETPOINT_PIN);
+  long pos_setpoint = map(pot_val, 0, 1023, -100, 100);
+  Serial.print(pot_val);
+  Serial.print(" ");
+  Serial.println(pos_setpoint);
 }

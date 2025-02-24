@@ -3,7 +3,7 @@
 #define BAUD_RATE 115200
 #define ENCODER_ADDRESS 0x36
 #define ANGLE_REGISTER_ADDRESS 0x0E
-#define SIZE_OF_ANGLE 2 /*bytes*/
+#define SIZE_OF_ANGLE 2 /* [bytes] */
 
 void setup() 
 {
