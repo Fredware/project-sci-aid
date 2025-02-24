@@ -2,7 +2,7 @@
 #include "controller.h"
 // #include "setpoint.h"
 
-#define PWM_ENABLED true /*Enable write operation for PWM_DIR and PWM_OUT*/
+#define PWM_ENABLED false /*Enable write operation for PWM_DIR and PWM_OUT*/
 #define BAUD_RATE 115200
 #define SERIAL_ENABLED true
 #define PRINT_SET true
@@ -12,8 +12,10 @@
 #define PRINT_CTRL_DIR false
 #define PRINT_CTRL_OUT true
 #define PRINT_CTRL_SAT true
-#define PRINT_TORQ false
 #define PRINT_TORQ_ADC false
+#define PRINT_TORQ_OBS true
+#define PRINT_TORQ_NORM true
+#define PRINT_LIMS_ADC false
 
 #define LOOP_PERIOD 1000 /* [mu_sec] => 1kHz */
 #define LOOP_RATE_PIN 3 /* Attach to oscilloscope to verify loop rate*/
@@ -33,8 +35,8 @@
 #define TORQUE_ADC_PIN A7
 #define TORQUE_OBS_MAX 15
 #define TORQUE_OBS_MIN -15
-#define TORQUE_NORM_MAX 1
-#define TORQUE_NORM_MIN -1
+#define TORQUE_NORM_MAX 100
+#define TORQUE_NORM_MIN -100
 #define TORQUE_BIAS_SAMPLES 4096
 
 #define PWM_DIR_PIN 12
@@ -127,10 +129,10 @@ void loop(){
     float angle_des = get_setpoint();
     uint16_t angle_obs = request_angle_i2c(ENCODER_ADDRESS, SIZE_OF_ANGLE_OBS);
     uint16_t hall_obs = analogRead(TORQUE_ADC_PIN);
-    double torque_obs = -0.0013*hall_obs*torque_obs + 0.4982*hall_obs -157.92;
+    double torque_obs = 0.002983*hall_obs*hall_obs - 1.533806*hall_obs + 182.192008;
 
     float angle_norm = map(angle_obs, ANGLE_OBS_MIN, ANGLE_OBS_MAX, ANGLE_NORM_MIN, ANGLE_NORM_MAX)/float(ANGLE_NORM_MAX)*100.0f;
-    float torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f-torque_bias;
+    float torque_norm = map(torque_obs, TORQUE_OBS_MIN, TORQUE_OBS_MAX, TORQUE_NORM_MIN, TORQUE_NORM_MAX)/float(TORQUE_NORM_MAX)*100.0f;
 
     /*Compute control law output*/
     controller_update(&ctrl_config, &ctrl_state, angle_des, angle_norm, torque_norm);
@@ -172,8 +174,10 @@ void loop(){
         if (PRINT_CTRL_DIR) { Serial.print(pwm_dir); Serial.print(" ");}
         if (PRINT_CTRL_OUT) { Serial.print(ctrl_state.out, 0); Serial.print(" ");}
         if (PRINT_CTRL_SAT) { Serial.print(pwm_out, 0); Serial.print(" ");}
-        if (PRINT_TORQ) { Serial.print(torque_norm, 2); Serial.print(" ");}
         if (PRINT_TORQ_ADC){Serial.print(hall_obs); Serial.print(" ");}
+        if (PRINT_TORQ_OBS) { Serial.print(torque_obs, 2); Serial.print(" ");}
+        if (PRINT_TORQ_NORM) { Serial.print(torque_norm, 2); Serial.print(" ");}
+        if (PRINT_LIMS_ADC){Serial.print(0); Serial.print(" "); Serial.print(1024);}
         Serial.println();
       }
       loop_stop = micros() - loop_start;
